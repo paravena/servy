@@ -40,17 +40,8 @@ defmodule Servy.Handler do
     file =
       @pages_path
       |> Path.join("form.html")
-
-    case File.read(file) do
-      {:ok, content} ->
-        %{conv | status: 200, resp_body: content}
-
-      {:error, :enoent} ->
-        %{conv | status: 404, resp_body: "Page not found"}
-
-      {:error, reason} ->
-        %{conv | status: 500, resp_body: "Error reading about page: #{reason}"}
-    end
+      |> File.read()
+      |> handle_file(conv)
   end
 
   def route(%Conv{method: "GET", path: "/bears/" <> id} = conv) do
@@ -70,18 +61,35 @@ defmodule Servy.Handler do
     file =
       @pages_path
       |> Path.join("about.html")
-
-    case File.read(file) do
-      {:ok, content} ->
-        %{conv | status: 200, resp_body: content}
-
-      {:error, :enoent} ->
-        %{conv | status: 404, resp_body: "Page not found"}
-
-      {:error, reason} ->
-        %{conv | status: 500, resp_body: "Error reading about page: #{reason}"}
-    end
+      |> File.read()
+      |> handle_file(conv)
   end
+
+  def route(%Conv{method: "GET", path: "/pages/" <> name} = conv) do
+    @pages_path
+    |> Path.join("#{name}.md")
+    |> File.read()
+    |> handle_file(conv)
+    |> markdown_to_html
+  end
+
+  def handle_file({:ok, content}, conv) do
+    %{conv | status: 200, resp_body: content}
+  end
+
+  def handle_file({:error, :enoent}, conv) do
+    %{conv | status: 404, resp_body: "Page not found"}
+  end
+
+  def handle_file({:error, reason}, conv) do
+    %{conv | status: 500, resp_body: "Error reading about page: #{reason}"}
+  end
+
+  def markdown_to_html(%Conv{status: 200} = conv) do
+    %{conv | resp_body: Earmark.as_html!(conv.resp_body)}
+  end
+
+  def markdown_to_html(%Conv{} = conv), do: conv
 
   def route(%Conv{path: path} = conv) do
     %{conv | status: 404, resp_body: "No #{path} here!"}
