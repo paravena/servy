@@ -26,11 +26,11 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{method: "GET", path: "/snapshots"} = conv) do
-    snapshot1 = VideoCam.get_snapshot("cam-1")
-    snapshot2 = VideoCam.get_snapshot("cam-2")
-    snapshot3 = VideoCam.get_snapshot("cam-3")
+    snapshots =
+      ["cam-1", "cam-2", "cam-3"]
+      |> Enum.map(&Task.async(fn -> VideoCam.get_snapshot(&1) end))
+      |> Enum.map(&Task.await/1)
 
-    snapshots = [snapshot1, snapshot2, snapshot3]
     %{conv | status: 200, resp_body: inspect(snapshots)}
   end
 
