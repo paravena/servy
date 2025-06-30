@@ -33,6 +33,10 @@ defmodule Servy.Handler do
     Servy.PledgeController.index(conv)
   end
 
+  def route(%Conv{method: "GET", path: "/pledges/new"} = conv) do
+    Servy.PledgeController.new(conv)
+  end
+
   def route(%Conv{method: "GET", path: "/snapshots"} = conv) do
     snapshots =
       ["cam-1", "cam-2", "cam-3"]
@@ -100,6 +104,16 @@ defmodule Servy.Handler do
     |> markdown_to_html
   end
 
+  def route(%Conv{method: "GET", path: "/404s"} = conv) do
+    counts = Servy.FourOhFourCounter.get_counts()
+
+    %{conv | status: 200, resp_body: inspect(counts)}
+  end
+
+  def route(%Conv{path: path} = conv) do
+    %{conv | status: 404, resp_body: "No #{path} here!"}
+  end
+
   def handle_file({:ok, content}, conv) do
     %{conv | status: 200, resp_body: content}
   end
@@ -117,10 +131,6 @@ defmodule Servy.Handler do
   end
 
   def markdown_to_html(%Conv{} = conv), do: conv
-
-  def route(%Conv{path: path} = conv) do
-    %{conv | status: 404, resp_body: "No #{path} here!"}
-  end
 
   def put_content_length(conv) do
     headers = Map.put(conv.resp_headers, "Content-Length", String.length(conv.resp_body))
