@@ -7,8 +7,8 @@ defmodule Servy.PledgeServer do
   end
 
   # Client API
-  def start() do
-    GenServer.start(__MODULE__, %State{}, name: @name)
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, %State{}, name: @name)
   end
 
   def create_pledge(name, amount) do
